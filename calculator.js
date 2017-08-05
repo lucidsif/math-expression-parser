@@ -113,4 +113,126 @@ function TreeNode(name, ...children) {
     this.name = name;
     this.children = children;
 }
+// tree node must accept a visitor;
+TreeNode.prototype.accept = function(visitor) {
+    return visitor.visit(this);
+};
 
+// our visitor object
+function PrintOriginalVisitor() {
+    this.visit = function(node) {
+        console.log(node);
+        switch (node.name) {
+            case 'Expression':
+                break;
+            case 'Term':
+                break;
+        }
+    };
+}
+
+
+function InfixVisitor() {
+
+    this.visit = function(node) {
+        console.log(node);
+        switch (node.name) {
+            case 'Expression':
+                return node.children[0].accept(this) + node.children[1].accept(this);
+                break;
+
+            case 'A':
+                if (node.children.length > 0) {
+                    return  node.children[0] + node.children[1].accept(this) + node.children[2].accept(this);
+                } else {
+                    return '';
+                }
+                break;
+            default:
+                break;
+        }
+    };
+}
+
+function PostfixVisitor() {
+
+    this.visit = function(node) {
+        switch (node.name) {
+            case 'Expression':
+                return node.children[0].accept(this) + node.children[1].accept(this);
+                break;
+            case 'Term':
+                return node.children[0].accept(this) + node.children[1].accept(this);
+                break;
+            case 'A':
+                if (node.children.length > 0) {
+                    return node.children[1].accept(this) + node.children[2].accept(this) + node.children[0];
+                } else {
+                    return '';
+                }
+                break;
+            case 'Factor':
+                if (node.children[0] === '(' ){
+                    return node.children[1].accept(this);
+                } else if (node.children[0] === '-') {
+                    return '-' + node.children[1].accept(this);
+                } else {
+                    return node.children[0];
+                }
+                break;
+            case 'B':
+                if (node.children.length > 0) {
+                    return node.children[1].accept(this) + node.children[2].accept(this) + node.children[0];
+                } else {
+                    return '';
+                }
+                break;
+            default:
+                break;
+        }
+    };
+}
+
+function InfixVisitorCalc() {
+
+    this.visit = function(node) {
+        switch (node.name) {
+            case 'Expression':
+                // return node.children[0].accept(this) + node.children[1].accept(this);
+                var t = node.children[0].accept(this);
+                var a = node.children[1].accept(this);
+                console.log('t, a', t, a);
+                return t + a;
+                break;
+            case 'Term': // needs to be done
+            case 'A': // needs to be done
+            case 'Factor': // needs to be done
+            case 'B':
+                if (node.children.length > 0) {
+                    var val = node.children[1].accept(this) * node.children[2].accept(this);
+                    if (node.children[0] == '*') {
+                        return val;
+                    } else {
+                        return 1 / val;
+                    }
+
+                } else {
+                    return 1;
+                }
+                break;
+            default:
+                break;
+        }
+    };
+}
+
+
+var calc = new Calculator('3+4*5');
+var tree = calc.parseExpression();
+
+var printOriginalVisitor = new PrintOriginalVisitor();
+var infixVisitor = new InfixVisitor();
+var postfixVisitor = new PostfixVisitor();
+console.log(tree.accept(postfixVisitor));
+
+// best way to traverse parse tree inorder dfs
