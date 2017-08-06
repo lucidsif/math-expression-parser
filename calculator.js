@@ -42,15 +42,15 @@ Calculator.prototype.get = function() {
 /* BNF
 E => T A
 A => + T A
-- T A
-epsilon
+     - T A
+     epsilon
 T => F B
 B => * F B
-/ F B
-epsilon
+     / F B
+     epsilon
 F => ( E )
-- F
-NUMBER
+       - F
+     NUMBER
 */
 
 Calculator.prototype.parseExpression = function() {
@@ -135,28 +135,7 @@ function PrintOriginalVisitor() {
 function InfixVisitor() {
 
     this.visit = function(node) {
-        console.log(node);
-        switch (node.name) {
-            case 'Expression':
-                return node.children[0].accept(this) + node.children[1].accept(this);
-                break;
-
-            case 'A':
-                if (node.children.length > 0) {
-                    return  node.children[0] + node.children[1].accept(this) + node.children[2].accept(this);
-                } else {
-                    return '';
-                }
-                break;
-            default:
-                break;
-        }
-    };
-}
-
-function PostfixVisitor() {
-
-    this.visit = function(node) {
+        //console.log(node);
         switch (node.name) {
             case 'Expression':
                 return node.children[0].accept(this) + node.children[1].accept(this);
@@ -166,27 +145,29 @@ function PostfixVisitor() {
                 break;
             case 'A':
                 if (node.children.length > 0) {
-                    return node.children[1].accept(this) + node.children[2].accept(this) + node.children[0];
+                    return  node.children[0] + node.children[1].accept(this) + node.children[2].accept(this);
+                } else {
+                    return '';
+                }
+                break;
+            case 'B':
+                if (node.children.length > 0) {
+                    return  node.children[0] + node.children[1].accept(this) + node.children[2].accept(this);
                 } else {
                     return '';
                 }
                 break;
             case 'Factor':
-                if (node.children[0] === '(' ){
-                    return node.children[1].accept(this);
-                } else if (node.children[0] === '-') {
-                    return '-' + node.children[1].accept(this);
+                // if first child is open paren
+                if (node.children[0] === '(') {
+                    return node.children[0].accept(this) + node.children[1].accept(this) + node.children[2].accept(this);
+                } else if (node.children[0] === '') {
+                    return '-' + node.children(1).accept(this);
                 } else {
                     return node.children[0];
                 }
-                break;
-            case 'B':
-                if (node.children.length > 0) {
-                    return node.children[1].accept(this) + node.children[2].accept(this) + node.children[0];
-                } else {
-                    return '';
-                }
-                break;
+                // if first child is -
+                // else return child
             default:
                 break;
         }
@@ -196,30 +177,47 @@ function PostfixVisitor() {
 function InfixVisitorCalc() {
 
     this.visit = function(node) {
+        //console.log(node);
         switch (node.name) {
             case 'Expression':
-                // return node.children[0].accept(this) + node.children[1].accept(this);
-                var t = node.children[0].accept(this);
-                var a = node.children[1].accept(this);
-                console.log('t, a', t, a);
-                return t + a;
+                return node.children[0].accept(this) + node.children[1].accept(this);
                 break;
-            case 'Term': // needs to be done
-            case 'A': // needs to be done
-            case 'Factor': // needs to be done
-            case 'B':
+            case 'Term':
+                console.log('hit term');
+                return node.children[0].accept(this) + node.children[1].accept(this);
+                break;
+            case 'A':
+                console.log('hit A');
                 if (node.children.length > 0) {
-                    var val = node.children[1].accept(this) * node.children[2].accept(this);
-                    if (node.children[0] == '*') {
-                        return val;
+                    if (node.children[0] == '+') {
+                        return  node.children[0] + node.children[1].accept(this) + node.children[2].accept(this);
                     } else {
-                        return 1 / val;
+                        return  node.children[0] + node.children[1].accept(this) + node.children[2].accept(this);
                     }
-
                 } else {
-                    return 1;
+                    return '';
                 }
                 break;
+            case 'B':
+                if (node.children.length > 0) {
+                    return node.children[0] + node.children[1].accept(this) + node.children[2].accept(this);
+                } else {
+                    //console.log('not')
+                    return '';
+                }
+                break;
+            case 'Factor':
+                // if first child is open paren
+                if (node.children[0] === '(') {
+                    return node.children[1].accept(this);
+                } else if (node.children[0] === '-') {
+                    // this may need to be changed
+                    return '-' + node.children(1).accept(this);
+                } else {
+                    return node.children[0];
+                }
+                // if first child is -
+                // else return child
             default:
                 break;
         }
@@ -227,12 +225,16 @@ function InfixVisitorCalc() {
 }
 
 
-var calc = new Calculator('3+4*5');
+
+var calc = new Calculator('(4+3)/4*3');
 var tree = calc.parseExpression();
 
 var printOriginalVisitor = new PrintOriginalVisitor();
 var infixVisitor = new InfixVisitor();
-var postfixVisitor = new PostfixVisitor();
-console.log(tree.accept(postfixVisitor));
+
+// infix calc
+var infixCalc = new InfixVisitorCalc();
+console.log(tree.accept(infixCalc));
+
 
 // best way to traverse parse tree inorder dfs
