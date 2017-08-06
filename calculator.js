@@ -95,7 +95,13 @@ Calculator.prototype.parseFactor = function() {
     var nextToken = this.peek();
 
     if (nextToken.name === 'NUMBER' ) {
-        return new TreeNode('Factor', this.get().value);
+        var concatNum = nextToken.value;
+        this.get();
+        while (this.peek() && this.peek().name === 'NUMBER') {
+            console.log(this.peek().name);
+            concatNum += this.get().value;
+        }
+        return new TreeNode('Factor', concatNum);
     } else if (nextToken.name === 'LPAREN') {
         // tokenStream -> [ "(" , expression, ")" ]
         this.get(); // captures left parens
@@ -161,6 +167,7 @@ InfixVisitor.prototype.visit = function(node) {
                 return "-" + node.children[1].accept(this);
             } else {
                 // number case
+                //console.log(node.children[0])
                 return node.children[0];
             }
             break;
@@ -213,6 +220,7 @@ function InfixVisitorCalc() {
                     // this may need to be changed
                     return -1 * node.children[1].accept(this);
                 } else {
+                    //console.log(node.children[0]);
                     return Number(node.children[0]);
                 }
                 break;
@@ -223,15 +231,19 @@ function InfixVisitorCalc() {
     };
 }
 
-// outputting 1 + 4
-var calc = new Calculator('(1+4)/5');
+// outputting 1 + 4 : NOT PICKING UP MULTI DIGIT NUMBERS
+// not picking up last token stream
+var calc = new Calculator('(30-10)/4');
 var tree = calc.parseExpression();
+
+console.log(calc.tokenStream);
+debugger;
 
 //var printOriginalVisitor = new PrintOriginalVisitor();
 var infixVisitor = new InfixVisitor();
 
 // infix calc
 var infixCalc = new InfixVisitorCalc();
-console.log(tree.accept(infixVisitor));
+console.log(tree.accept(infixCalc));
 
 
