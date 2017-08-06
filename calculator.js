@@ -93,21 +93,21 @@ Calculator.prototype.parseB = function() {
 
 Calculator.prototype.parseFactor = function() {
     var nextToken = this.peek();
-    if (nextToken && nextToken.name === 'LPAREN') {
-        this.get();
+
+    if(nextToken.name === "NUMBER" ) {
+        return new TreeNode("Factor", this.get().value);
+    } else if (nextToken.name === "LPAREN") {
+        // tokenStream -> [ "(" , expression, ")" ]
+        this.get(); // captures left parens
         var expr = this.parseExpression();
-        this.get();
-        return new TreeNode('Factor', '(', expr, ')');
-    }  else if (nextToken && nextToken.name === 'SUB') {
-        this.get();
-        return new TreeNode('Factor', '-', this.parseFactor());
-    } else if (nextToken && nextToken.name === 'NUMBER') {
-        this.get();
-        return new TreeNode('Factor', nextToken.value);
+        this.get(); // captures right parens
+        return new TreeNode("Factor", "(", expr, ")");
+    } else if (nextToken.name === "SUB") {
+        return new TreeNode("Factor", "-", this.parseFactor());
     } else {
-        throw new Error('Did not find a factor.');
+        throw new Error("Did not find a factor.");
     }
-};
+}
 
 function TreeNode(name, ...children) {
     this.name = name;
@@ -144,25 +144,37 @@ function InfixVisitor() {
                 return node.children[0].accept(this) + node.children[1].accept(this);
                 break;
             case 'A':
-                if (node.children.length > 0) {
-                    return  node.children[0] + node.children[1].accept(this) + node.children[2].accept(this);
+                if(node.children.length > 0) {
+                    var val = node.children[1].accept(this) + node.children[2].accept(this);
+                    if(node.children[0] === "+") {
+                        return val;
+                    } else if(node.children[0] === "-") {
+                        return val;
+                    }
                 } else {
+                    // epsilon
                     return '';
                 }
                 break;
             case 'B':
-                if (node.children.length > 0) {
-                    return  node.children[0] + node.children[1].accept(this) + node.children[2].accept(this);
+                if(node.children.length > 0) {
+                    var val = node.children[1].accept(this) * node.children[2].accept(this);
+                    if(node.children[0] === "*") {
+                        return val;
+                    } else if(node.children[0] === "/") {
+                        return 1/val;
+                    }
                 } else {
+                    // epsilon
                     return '';
                 }
                 break;
             case 'Factor':
                 // if first child is open paren
                 if (node.children[0] === '(') {
-                    return node.children[0].accept(this) + node.children[1].accept(this) + node.children[2].accept(this);
-                } else if (node.children[0] === '') {
-                    return '-' + node.children(1).accept(this);
+                    return node.children[1].accept(this);
+                } else if (node.children[0] === '-') {
+                    return '-' + node.children[1].accept(this);
                 } else {
                     return node.children[0];
                 }
@@ -183,27 +195,31 @@ function InfixVisitorCalc() {
                 return node.children[0].accept(this) + node.children[1].accept(this);
                 break;
             case 'Term':
-                console.log('hit term');
                 return node.children[0].accept(this) + node.children[1].accept(this);
                 break;
             case 'A':
-                console.log('hit A');
                 if (node.children.length > 0) {
+                    var val = node.children[1].accept(this) + node.children[2].accept(this);
                     if (node.children[0] == '+') {
-                        return  node.children[0] + node.children[1].accept(this) + node.children[2].accept(this);
-                    } else {
-                        return  node.children[0] + node.children[1].accept(this) + node.children[2].accept(this);
+                        return  val;
+                    } else if (node.children[0] == '-') {
+                        return  -1 * val;
                     }
                 } else {
-                    return '';
+                    return 0;
                 }
                 break;
             case 'B':
-                if (node.children.length > 0) {
-                    return node.children[0] + node.children[1].accept(this) + node.children[2].accept(this);
+                if(node.children.length > 0) {
+                    var val = node.children[1].accept(this) * node.children[2].accept(this);
+                    if(node.children[0] === "*") {
+                        return val;
+                    } else if(node.children[0] === "/") {
+                        return 1/val;
+                    }
                 } else {
-                    //console.log('not')
-                    return '';
+                    // epsilon
+                    return 1;
                 }
                 break;
             case 'Factor':
@@ -212,13 +228,16 @@ function InfixVisitorCalc() {
                     return node.children[1].accept(this);
                 } else if (node.children[0] === '-') {
                     // this may need to be changed
-                    return '-' + node.children(1).accept(this);
+                    return -1 * node.children[1].accept(this);
                 } else {
-                    return node.children[0];
+                    console.log(node.children[0]);
+                    return Number(node.children[0]);
                 }
+                break;
                 // if first child is -
                 // else return child
             default:
+                console.log('hit default');
                 break;
         }
     };
@@ -226,7 +245,7 @@ function InfixVisitorCalc() {
 
 
 
-var calc = new Calculator('(4+3)/4*3');
+var calc = new Calculator('7+5');
 var tree = calc.parseExpression();
 
 var printOriginalVisitor = new PrintOriginalVisitor();
