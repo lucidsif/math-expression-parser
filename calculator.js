@@ -98,7 +98,6 @@ Calculator.prototype.parseFactor = function() {
         var concatNum = nextToken.value;
         this.get();
         while (this.peek() && this.peek().name === 'NUMBER') {
-            console.log(this.peek().name);
             concatNum += this.get().value;
         }
         return new TreeNode('Factor', concatNum);
@@ -201,15 +200,15 @@ function InfixVisitorCalc() {
                 break;
             case 'B':
                 if (node.children.length > 0) {
-                    var val = node.children[1].accept(this) * node.children[2].accept(this);
+                    //var val = node.children[1].accept(this) * node.children[2].accept(this);
                     if (node.children[0] == '*') {
-                        return val;
+                        return node.children[1].accept(this) * node.children[2].accept(this);
                     } else if (node.children[0] == '/') {
-                        return 1 / val;
+                        return 1 / (node.children[1].accept(this) * node.children[2].accept(this));
                     }
                 } else {
                     // epsilon
-                    return 1;
+                    return 0;
                 }
                 break;
             case 'Factor':
@@ -220,7 +219,6 @@ function InfixVisitorCalc() {
                     // this may need to be changed
                     return -1 * node.children[1].accept(this);
                 } else {
-                    //console.log(node.children[0]);
                     return Number(node.children[0]);
                 }
                 break;
@@ -231,13 +229,9 @@ function InfixVisitorCalc() {
     };
 }
 
-// outputting 1 + 4 : NOT PICKING UP MULTI DIGIT NUMBERS
-// not picking up last token stream
-var calc = new Calculator('(30-10)/4');
+// can't multiply or divide
+var calc = new Calculator('10/5');
 var tree = calc.parseExpression();
-
-console.log(calc.tokenStream);
-debugger;
 
 //var printOriginalVisitor = new PrintOriginalVisitor();
 var infixVisitor = new InfixVisitor();
