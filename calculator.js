@@ -155,8 +155,7 @@ InfixVisitor.prototype.visit = function(node) {
             break;
         case "Factor":
             if(node.children[0] === "(") {
-                // return "(" + node.children[1].accept(this) + ")";
-                return node.children[1].accept(this);
+                return "(" + node.children[1].accept(this) + ")";
 
             } else if(node.children[0] === "-") {
                 return "-" + node.children[1].accept(this);
@@ -167,55 +166,6 @@ InfixVisitor.prototype.visit = function(node) {
             break;
     }
 }
-
-function RPNVisitor() {
-}
-
-RPNVisitor.prototype.visit = function(node) {
-    var myselfTheVisitor = this;
-    switch (node.name) {
-        case 'Expression':
-            // T A
-
-            return node.children[0].accept(this) + ' ' + node.children[1].accept(this);
-            break;
-        case 'Term':
-            // FACTOR                         // B
-            return node.children[0].accept(this) + ' ' + node.children[1].accept(this);
-            break;
-        case 'A': // +/- T A -> TA+/-
-
-            // A -> + T A
-            // A -> eps
-            // E -> E + E + E + E
-            // E -> TA -> T+TA -> T+TT+ 1+2+3+4 1234++ 4321++
-            if (node.children.length > 0) {
-                // + 4 + 5
-                // 5 + 4 +
-                return node.children[1].accept(this) + ' ' + node.children[2].accept(this) + ' ' + node.children[0];
-            } else { // epsilon
-                return '';
-            }
-            break;
-        case 'B':
-            if (node.children.length > 0) {
-                return node.children[1].accept(this) + ' ' + node.children[2].accept(this) + ' ' + node.children[0];
-            } else { // epsilon
-                return '';
-            }
-            break;
-        case 'Factor':
-            if (node.children[0] === '(') {
-                return node.children[1].accept(this);
-            } else if (node.children[0] === '-') {
-                return '-' + node.children[1].accept(this);
-            } else {
-                // number case
-                return node.children[0];
-            }
-            break;
-    }
-};
 
 
 function InfixVisitorCalc() {
@@ -233,8 +183,9 @@ function InfixVisitorCalc() {
                 if (node.children.length > 0) {
                     var val = node.children[1].accept(this) + node.children[2].accept(this);
                     if (node.children[0] == '+') {
-                        return  val;
+                        return val;
                     } else if (node.children[0] == '-') {
+                        // need to add logic for subtraction
                         return  -1 * val;
                     }
                 } else {
@@ -262,12 +213,9 @@ function InfixVisitorCalc() {
                     // this may need to be changed
                     return -1 * node.children[1].accept(this);
                 } else {
-                    console.log(node.children[0]);
                     return Number(node.children[0]);
                 }
                 break;
-                // if first child is -
-                // else return child
             default:
                 console.log('hit default');
                 break;
@@ -275,19 +223,15 @@ function InfixVisitorCalc() {
     };
 }
 
-
-var calc = new Calculator('5-9');
+// outputting 1 + 4
+var calc = new Calculator('(1+4)/5');
 var tree = calc.parseExpression();
 
 //var printOriginalVisitor = new PrintOriginalVisitor();
 var infixVisitor = new InfixVisitor();
-//var rpnVisitor = new RPNVisitor();
-//console.log(tree.accept(rpnVisitor));
-
 
 // infix calc
-//var infixCalc = new InfixVisitorCalc();
+var infixCalc = new InfixVisitorCalc();
 console.log(tree.accept(infixVisitor));
 
 
-// best way to traverse parse tree inorder dfs
