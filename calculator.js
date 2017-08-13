@@ -1,6 +1,5 @@
 function Calculator(inputString) {
     this.tokenStream = this.lexer(inputString);
-    this.peekIndex = 0;
 }
 
 Calculator.prototype.lexer = function(string) {
@@ -52,6 +51,12 @@ F => ( E )
        - F
      NUMBER
 */
+
+// E = Expression
+// T = Term
+// F = Factor
+// A = ExpressionRemainder // a placeholder created to remove the left-recursion
+// B = TermRemainder // same as above
 
 Calculator.prototype.parseExpression = function() {
     var t = this.parseTerm();
@@ -175,62 +180,66 @@ InfixVisitor.prototype.visit = function(node) {
 
 
 function InfixVisitorCalc() {
-
-    this.visit = function(node) {
-        //console.log(node);
-        switch (node.name) {
-            case 'Expression':
-                return node.children[0].accept(this) + node.children[1].accept(this);
-                break;
-            case 'Term':
-                return node.children[0].accept(this) + node.children[1].accept(this);
-                break;
-            case 'A':
-                if (node.children.length > 0) {
-                    var val = node.children[1].accept(this) + node.children[2].accept(this);
-                    if (node.children[0] == '+') {
-                        return val;
-                    } else if (node.children[0] == '-') {
-                        // need to add logic for subtraction
-                        return  -1 * val;
-                    }
-                } else {
-                    return 0;
-                }
-                break;
-            case 'B':
-                if (node.children.length > 0) {
-                    //var val = node.children[1].accept(this) * node.children[2].accept(this);
-                    if (node.children[0] == '*') {
-                        return node.children[1].accept(this) * node.children[2].accept(this);
-                    } else if (node.children[0] == '/') {
-                        return 1 / (node.children[1].accept(this) * node.children[2].accept(this));
-                    }
-                } else {
-                    // epsilon
-                    return 0;
-                }
-                break;
-            case 'Factor':
-                // if first child is open paren
-                if (node.children[0] == '(') {
-                    return node.children[1].accept(this);
-                } else if (node.children[0] == '-') {
-                    // this may need to be changed
-                    return -1 * node.children[1].accept(this);
-                } else {
-                    return Number(node.children[0]);
-                }
-                break;
-            default:
-                console.log('hit default');
-                break;
-        }
-    };
 }
 
+InfixVisitorCalc.prototype.visit = function(node) {
+    //console.log(node);
+    switch (node.name) {
+        case 'Expression':
+            return node.children[0].accept(this) + node.children[1].accept(this);
+            break;
+        case 'Term':
+            return node.children[0].accept(this) * node.children[1].accept(this);
+            break;
+        case 'A':
+            if (node.children.length > 0) {
+                var val = node.children[1].accept(this) + node.children[2].accept(this);
+                if (node.children[0] == '+') {
+                    return val;
+                } else if (node.children[0] == '-') {
+                    // need to add logic for subtraction
+                    return  -1 * val;
+                }
+            } else {
+                return 0;
+            }
+            break;
+        case 'B':
+            if (node.children.length > 0) {
+                var val =  node.children[1].accept(this) * node.children[2].accept(this);
+                if (node.children[0] == '*') {
+                    return val ;
+                } else if (node.children[0] == '/') {
+                    console.log('hit division');
+                    return 1 / val;
+                }
+            } else {
+                // // setting this to 1 breaks addition/subtraction, setting it to 0 can result in ridiculous numbers when dividing
+                console.log('******', node);
+
+                return 1;
+            }
+            break;
+        case 'Factor':
+            // if first child is open paren
+            if (node.children[0] == '(') {
+                return node.children[1].accept(this);
+            } else if (node.children[0] == '-') {
+                // this may need to be changed
+                return -1 * node.children[1].accept(this);
+            } else {
+                return Number(node.children[0]);
+            }
+            break;
+        default:
+            console.log('hit default');
+            break;
+    }
+};
+
 // can't multiply or divide
-var calc = new Calculator('10/5');
+var calc = new Calculator('8*7');
+//console.log(calc.tokenStream);
 var tree = calc.parseExpression();
 
 //var printOriginalVisitor = new PrintOriginalVisitor();
@@ -238,6 +247,12 @@ var infixVisitor = new InfixVisitor();
 
 // infix calc
 var infixCalc = new InfixVisitorCalc();
+//console.log(tree.accept(infixVisitor));
 console.log(tree.accept(infixCalc));
 
+// MAYBE THE 5 NEVER GETS CHECKED
 
+                            //Expression
+                 // Term                     //A
+               //Factor    //B           //+  //Term //A
+              // 5
